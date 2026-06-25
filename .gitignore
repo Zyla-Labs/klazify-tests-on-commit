@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Secrets
+.env
+.env.local
+.env.*.local
+cypress.env.json
+
+# Cypress artifacts
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+cypress/results/
+
+# Vercel report output
+vercel-dist/
+.vercel/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db

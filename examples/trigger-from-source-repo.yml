@@ -1,0 +1,55 @@
+# Copiar al repositorio fuente (ej. klazify) como:
+#   .github/workflows/trigger-remote-cypress.yml
+#
+# Secrets en el repo FUENTE:
+#   CROSS_REPO_DISPATCH_TOKEN — PAT con permiso repository_dispatch en el repo de tests
+#   CYPRESS_TESTS_OWNER       — org o usuario dueño del repo de tests (ej. Zylalabs)
+#   CYPRESS_TESTS_REPO        — nombre del repo de tests (ej. Klazify-tests-on-commit)
+#
+# Secrets en el repo de TESTS (Klazify-tests-on-commit):
+#   KLAZIFY_API_KEY
+#   VERCEL_TOKEN
+
+name: Trigger Remote Cypress Tests
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  trigger-remote-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Validate dispatch configuration
+        env:
+          CROSS_REPO_DISPATCH_TOKEN: ${{ secrets.CROSS_REPO_DISPATCH_TOKEN }}
+          CYPRESS_TESTS_OWNER: ${{ secrets.CYPRESS_TESTS_OWNER }}
+          CYPRESS_TESTS_REPO: ${{ secrets.CYPRESS_TESTS_REPO }}
+        run: |
+          if [ -z "$CROSS_REPO_DISPATCH_TOKEN" ] || [ -z "$CYPRESS_TESTS_OWNER" ] || [ -z "$CYPRESS_TESTS_REPO" ]; then
+            echo "Missing one or more required secrets:"
+            echo "- CROSS_REPO_DISPATCH_TOKEN"
+            echo "- CYPRESS_TESTS_OWNER"
+            echo "- CYPRESS_TESTS_REPO"
+            exit 1
+          fi
+
+      - name: Dispatch event to Cypress repository
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CROSS_REPO_DISPATCH_TOKEN }}
+          repository: ${{ secrets.CYPRESS_TESTS_OWNER }}/${{ secrets.CYPRESS_TESTS_REPO }}
+          event-type: deploy_trigger
+          client-payload: |
+            {
+              "source_repository": "${{ github.repository }}",
+              "source_branch": "${{ github.ref_name }}",
+              "source_sha": "${{ github.sha }}",
+              "source_actor": "${{ github.actor }}",
+              "source_run_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
