@@ -11,7 +11,7 @@ const realTimeRequest = ({
   failOnStatusCode = false,
   timeout = 120000
 } = {}) =>
-  cy.request({
+  cy.klazifyRequest({
     method,
     url: REAL_TIME_PATH,
     headers: buildHeaders(authorization),

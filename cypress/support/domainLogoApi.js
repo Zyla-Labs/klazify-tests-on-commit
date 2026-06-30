@@ -11,7 +11,7 @@ const domainLogoRequest = ({
   failOnStatusCode = false,
   timeout = 120000
 } = {}) =>
-  cy.request({
+  cy.klazifyRequest({
     method,
     url: DOMAIN_LOGO_PATH,
     headers: buildHeaders(authorization),

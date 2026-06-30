@@ -26,7 +26,7 @@ const categorizeRequest = ({
 } = {}) => {
   const url = query ? `${CATEGORIZE_PATH}?${query}` : CATEGORIZE_PATH;
 
-  return cy.request({
+  return cy.klazifyRequest({
     method,
     url,
     headers: buildHeaders(authorization),

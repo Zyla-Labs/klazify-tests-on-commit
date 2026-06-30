@@ -13,7 +13,7 @@ const domainExpirationRequest = ({
   failOnStatusCode = false,
   timeout = 120000
 } = {}) =>
-  cy.request({
+  cy.klazifyRequest({
     method,
     url: DOMAIN_EXPIRATION_PATH,
     headers: buildHeaders(authorization),

@@ -11,7 +11,7 @@ const iabCategoriesRequest = ({
   failOnStatusCode = false,
   timeout = 120000
 } = {}) =>
-  cy.request({
+  cy.klazifyRequest({
     method,
     url: IAB_CATEGORIES_PATH,
     headers: buildHeaders(authorization),

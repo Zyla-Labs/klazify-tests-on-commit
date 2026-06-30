@@ -21,7 +21,7 @@ const discoveryRequest = ({
   rawBody,
   failOnStatusCode = false
 } = {}) =>
-  cy.request({
+  cy.klazifyRequest({
     method,
     url: DISCOVERY_PATH,
     headers: buildHeaders(authorization),

@@ -8,7 +8,9 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: 'https://www.klazify.com',
     env: {
-      KLAZIFY_API_KEY: process.env.KLAZIFY_API_KEY
+      KLAZIFY_API_KEY: process.env.KLAZIFY_API_KEY,
+      KLAZIFY_RATE_LIMIT_PER_MINUTE: 240,
+      KLAZIFY_RATE_LIMIT_WINDOW_MS: 10000
     },
     video: false
   }

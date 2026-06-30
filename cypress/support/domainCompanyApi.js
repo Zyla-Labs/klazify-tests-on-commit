@@ -22,7 +22,7 @@ const domainCompanyRequest = ({
   failOnStatusCode = false,
   timeout = 120000
 } = {}) =>
-  cy.request({
+  cy.klazifyRequest({
     method,
     url: DOMAIN_COMPANY_PATH,
     headers: buildHeaders(authorization),
