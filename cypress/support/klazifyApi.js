@@ -1,7 +1,92 @@
 const MAX_429_RETRIES = 3;
+const REQUEST_LOG_BODY_MAX_LENGTH = 4000;
 
 const rateLimitState = {
   timestamps: []
+};
+
+const requestLogState = {
+  entries: []
+};
+
+const stringifyForLog = (value, maxLength = REQUEST_LOG_BODY_MAX_LENGTH) => {
+  if (value === undefined) {
+    return '(none)';
+  }
+
+  try {
+    const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    return text.length > maxLength ? `${text.slice(0, maxLength)}... [truncated]` : text;
+  } catch {
+    return String(value);
+  }
+};
+
+const clearRequestLog = () => {
+  requestLogState.entries = [];
+};
+
+const recordRequest = (entry) => {
+  requestLogState.entries.push(entry);
+};
+
+const formatRequestLogEntry = (entry, index) => {
+  const params =
+    entry.body !== undefined
+      ? entry.body
+      : entry.qs !== undefined
+        ? entry.qs
+        : entry.query !== undefined
+          ? entry.query
+          : null;
+
+  return [
+    `--- Request ${index + 1} ---`,
+    `${entry.method} ${entry.fullUrl}`,
+    `Params: ${stringifyForLog(params)}`,
+    `Status: ${entry.status}`,
+    `Response: ${stringifyForLog(entry.responseBody)}`
+  ].join('\n');
+};
+
+const formatFailedRequestDetails = () => {
+  if (requestLogState.entries.length === 0) {
+    return '';
+  }
+
+  return `\n\nRequest details:\n${requestLogState.entries.map(formatRequestLogEntry).join('\n\n')}`;
+};
+
+const logFailedRequests = () => {
+  const message = formatFailedRequestDetails();
+
+  if (!message) {
+    return;
+  }
+
+  Cypress.log({
+    name: 'failed-test-requests',
+    displayName: 'FAILED REQUEST',
+    message: message.trim(),
+    consoleProps: () => ({ requests: requestLogState.entries })
+  });
+
+  // Visible en terminal / CI ademas del runner de Cypress.
+  console.error(`[Cypress] Failed test request details:${message}`);
+};
+
+const appendFailedRequestDetails = (error) => {
+  const details = formatFailedRequestDetails();
+
+  if (!details || !error) {
+    return error;
+  }
+
+  if (!error.message.includes('Request details:')) {
+    error.message = `${error.message}${details}`;
+  }
+
+  return error;
 };
 
 const getRateLimitConfig = () => {
@@ -108,6 +193,21 @@ const klazifyRequest = (options = {}, attempt = 0) => {
         return cy.wait(waitMs, { log: false }).then(() => klazifyRequest(options, attempt + 1));
       }
 
+      const baseUrl = (Cypress.config('baseUrl') || '').replace(/\/$/, '');
+      const requestPath = requestOptions.url || '';
+      const [pathOnly, queryFromUrl] = requestPath.split('?');
+
+      recordRequest({
+        method: (requestOptions.method || 'GET').toUpperCase(),
+        path: pathOnly,
+        fullUrl: `${baseUrl}${requestPath.startsWith('/') ? '' : '/'}${requestPath}`,
+        body: requestOptions.body,
+        qs: requestOptions.qs,
+        query: queryFromUrl,
+        status: response.status,
+        responseBody: response.body
+      });
+
       return response;
     })
   );
@@ -121,5 +221,8 @@ Cypress.klazifyApi = {
   buildHeaders,
   hasMeaningfulError,
   waitForKlazifyRateLimit,
-  klazifyRequest
+  klazifyRequest,
+  clearRequestLog,
+  logFailedRequests,
+  appendFailedRequestDetails
 };
