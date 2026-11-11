@@ -219,7 +219,7 @@ describe('POST /api/discovery - autenticacion y metodo HTTP', () => {
 });
 
 describe('POST /api/discovery - casos negativos y mejoras de API', () => {
-  const { hasMeaningfulError, isDefaultUnfilteredPayload } = Cypress.discoveryApi;
+  const { hasMeaningfulError } = Cypress.discoveryApi;
 
   it('devuelve lista vacia (no error) para filtros sin coincidencias', () => {
     const noMatchCases = [
@@ -230,10 +230,6 @@ describe('POST /api/discovery - casos negativos y mejoras de API', () => {
       {
         name: 'pais invalido ZZ',
         body: { top_n: 1000, filters: { country: 'ZZ' } }
-      },
-      {
-        name: 'employees segun docs (51-200) sin matches',
-        body: { top_n: 100000, filters: { employees: '51-200' } }
       },
       {
         name: 'combinacion restrictiva sin resultados',
@@ -282,16 +278,16 @@ describe('POST /api/discovery - casos negativos y mejoras de API', () => {
       }).then((response) => {
         const body = response.body || {};
         const meaningfulError = hasMeaningfulError(response);
-        const silentDefaultPayload = isDefaultUnfilteredPayload(body);
+        const silentAccept = response.status === 200 && !meaningfulError;
 
-        if (!meaningfulError && silentDefaultPayload) {
+        if (silentAccept) {
           findings.push({
             case: testCase.name,
             status: response.status,
             total: body.total,
             firstDomain: body.results?.[0]?.domain || null,
             improvement:
-              'Devolver 400/422 con mensaje de validacion en lugar del payload por defecto (google.com, total~1M).'
+              'Devolver 400/422 con mensaje de validacion en lugar de un listado 200 sin error.'
           });
         }
       });
@@ -346,19 +342,17 @@ describe('POST /api/discovery - casos negativos y mejoras de API', () => {
     });
   });
 
-  it('registra discrepancia entre valores employees documentados y almacenados', () => {
+  it('acepta el rango employees documentado y el rango almacenado', () => {
     cy.discoveryRequest({
       body: { top_n: 100000, filters: { employees: '51-200' }, page: 1 }
     }).then((documentedValue) => {
       cy.discoveryRequest({
         body: { top_n: 100000, filters: { employees: '50K-100K' }, page: 1 }
       }).then((storedValue) => {
-        expect(documentedValue.body.total, 'docs 51-200').to.eq(0);
-        expect(storedValue.body.total, 'dato real 50K-100K').to.be.greaterThan(0);
-
-        cy.log(
-          'Mejora sugerida: la documentacion lista employees como "51-200", pero los datos usan rangos como "50K-100K".'
-        );
+        expect(documentedValue.status).to.eq(200);
+        expect(storedValue.status).to.eq(200);
+        expect(documentedValue.body.total, 'docs 51-200').to.be.greaterThan(0);
+        expect(storedValue.body.total, 'dato 50K-100K').to.be.greaterThan(0);
       });
     });
   });
