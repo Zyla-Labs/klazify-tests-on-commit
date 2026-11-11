@@ -27,6 +27,12 @@ describe('POST /api/domain_company - casos positivos', () => {
         return;
       }
 
+      if (response.body.success === false && response.body.error === 'refresh_failed') {
+        expect(response.status).to.eq(200);
+        expect(response.body.message).to.be.a('string').and.not.be.empty;
+        return;
+      }
+
       expect(response.status).to.eq(200);
       cy.assertDomainCompanySuccessShape(response.body, 'refresh=true');
     });

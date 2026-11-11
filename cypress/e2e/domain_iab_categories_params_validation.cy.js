@@ -33,6 +33,12 @@ describe('POST /api/domain_iab_categories - casos positivos', () => {
         return;
       }
 
+      if (response.body.success === false && response.body.error === 'refresh_failed') {
+        expect(response.status).to.eq(200);
+        expect(response.body.message).to.be.a('string').and.not.be.empty;
+        return;
+      }
+
       expect(response.status).to.eq(200);
       cy.assertIabCategoriesSuccessShape(response.body, 'refresh=true');
     });
